@@ -1,0 +1,35 @@
+name: Daily NSE & BSE Bhavcopy Sync
+
+on:
+  schedule:
+    # Runs at 13:30 UTC (7:00 PM IST) Monday to Friday
+    - cron: '30 13 * * 1-5'
+  workflow_dispatch: # Allows manual trigger anytime
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch and process Bhavcopy
+        run: python update_screener.py
+
+      - name: Commit updated JSON
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add latest_stocks.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update NSE/BSE daily data" && git push)
